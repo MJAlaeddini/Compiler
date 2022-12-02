@@ -1,6 +1,7 @@
 class Scanner:
     def __init__(self, input_file_name: str):
         self.input_file = open(input_file_name, 'r')
+        self.token_file = open('tokens.txt', 'w')
         self.error_file = open('lexical_errors.txt', 'w')
         self.symbol_table_file = open('symbol_table.txt', 'w')
 
