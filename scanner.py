@@ -1,14 +1,17 @@
 import string
 
+
 class Scanner:
 
     def __init__(self, input_file_name: str):
         self.symbols = [';', '=', '/', '+', '*', '-', '<', '>', ':', '[', ']', '{', '}', '(', ')']
         self.whiteSpace = ['\n', ' ', '\r', '\t', '\v', '\f']
-        self.Keywords = ['if', 'else', 'void', 'int', 'while', 'break', 'switch', 'case', 'default', 'return', 'endif']
+        self.keywords = ['if', 'else', 'void', 'int', 'while', 'break', 'switch', 'case', 'default', 'return', 'endif']
+        self.digit = list(string.digits)
         self.line = 1
         self.alphabet = list(string.ascii_lowercase) + list(string.ascii_uppercase)
         self.lexical_errors = []
+        self.symbol_table = []
 
         self.input_file = open(input_file_name, 'r')
         self.token_file = open('tokens.txt', 'w')
@@ -18,11 +21,11 @@ class Scanner:
     def get_next_token(self):
 
         next_char = self.input_file.read(1)
-        if '0' <= next_char <= '9':
+        if next_char in self.digit:
             lex = next_char
             while True:
                 next_char = self.input_file.read(1)
-                if '0' <= next_char <= '9':
+                if next_char in self.digit:
                     lex = lex + next_char
                 elif next_char in self.symbols or next_char in self.whiteSpace:
                     self.input_file.seek(self.input_file.tell() - 1)
@@ -30,9 +33,29 @@ class Scanner:
                 elif next_char in self.alphabet:
                     lex += next_char
                     self.lexical_errors.append(Error("Invalid number", self.line, lex))
+                    return self.get_next_token()
                 else:
                     lex += next_char
                     self.lexical_errors.append(Error("Invalid input", self.line, lex))
+                    return self.get_next_token()
+        elif next_char in self.alphabet:
+            lex = next_char
+            while True:
+                next_char = self.input_file.read(1)
+                if next_char in self.alphabet or next_char in self.digit:
+                    lex = lex + next_char
+                elif next_char in self.symbols or next_char in self.whiteSpace:
+                    self.input_file.seek(self.input_file.tell() - 1)
+                    if lex not in self.symbol_table:
+                        self.symbol_table.append(lex)
+                    if lex in self.keywords:
+                        return Token('KEYWORD', self.line, lex)
+                    else:
+                        return Token('ID', self.line, lex)
+                else:
+                    lex += next_char
+                    self.lexical_errors.append(Error("Invalid input", self.line, lex))
+                    return self.get_next_token()
         elif next_char == '\n':
             self.line += 1
 
