@@ -4,7 +4,7 @@ import string
 class Scanner:
 
     def __init__(self, input_file_name: str):
-        self.symbols = [';', '=', '/', '+', '*', '-', '<', ':', '[', ']', '{', '}', '(', ')']
+        self.symbols = [';', '=', '/', '+', '*', '-', '<', ':', '[', ']', '{', '}', '(', ')', ',']
         self.whiteSpace = ['\n', ' ', '\r', '\t', '\v', '\f']
         self.line_break = ['\n', '\r', '\v', '\f']
         self.keywords = ['if', 'else', 'void', 'int', 'while', 'break', 'switch', 'case', 'default', 'return', 'endif']
@@ -15,9 +15,6 @@ class Scanner:
         self.symbol_table = []
 
         self.input_file = open(input_file_name, 'r')
-        self.token_file = open('tokens.txt', 'w')
-        self.error_file = open('lexical_errors.txt', 'w')
-        self.symbol_table_file = open('symbol_table.txt', 'w')
 
     def get_next_token(self):
 
@@ -88,13 +85,22 @@ class Scanner:
                 else:
                     self.input_file.seek(self.input_file.tell() - 1)
                     return Token('SYMBOL', self.line, '=')
+            elif next_char == '*':
+                next_char = self.input_file.read(1)
+                if next_char == '/':
+                    self.lexical_errors.append(Error("Unmatched comment", self.line, '*/'))
+                else:
+                    self.input_file.seek(self.input_file.tell() - 1)
+                    return Token('SYMBOL', self.line, '*')
             else:
                 return Token('SYMBOL', self.line, next_char)
         elif next_char in self.whiteSpace:
             if next_char in self.line_break:
                 self.line += 1
-
-        pass  # ToDo
+        elif next_char == '':
+            return 'exit'
+        else:
+            self.lexical_errors.append(Error("Invalid input", self.line, next_char))
 
     def save_error(self):
         pass  # ToDo
