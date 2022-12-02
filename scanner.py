@@ -12,7 +12,7 @@ class Scanner:
         self.line = 1
         self.alphabet = list(string.ascii_lowercase) + list(string.ascii_uppercase)
         self.lexical_errors = []
-        self.symbol_table = []
+        self.symbol_table = ['if', 'else', 'void', 'int', 'while', 'break', 'switch', 'case', 'default', 'return', 'endif']
 
         self.input_file = open(input_file_name, 'r')
 
@@ -22,11 +22,12 @@ class Scanner:
         if next_char in self.digit:
             lex = next_char
             while True:
+                t = self.input_file.tell()
                 next_char = self.input_file.read(1)
                 if next_char in self.digit:
                     lex = lex + next_char
                 elif next_char in self.symbols or next_char in self.whiteSpace:
-                    self.input_file.seek(self.input_file.tell() - 1)
+                    self.input_file.seek(t)
                     return Token('NUM', self.line, lex)
                 elif next_char in self.alphabet:
                     lex += next_char
@@ -39,11 +40,12 @@ class Scanner:
         elif next_char in self.alphabet:
             lex = next_char
             while True:
+                t = self.input_file.tell()
                 next_char = self.input_file.read(1)
                 if next_char in self.alphabet or next_char in self.digit:
                     lex = lex + next_char
                 elif next_char in self.symbols or next_char in self.whiteSpace:
-                    self.input_file.seek(self.input_file.tell() - 1)
+                    self.input_file.seek(t)
                     if lex not in self.symbol_table:
                         self.symbol_table.append(lex)
                     if lex in self.keywords:
@@ -69,29 +71,37 @@ class Scanner:
                             else:
                                 self.input_file.seek(self.input_file.tell() - 1)
                         elif next_char == '':
-                            self.lexical_errors.append(Error("Unclosed comment", self.line, lex))
+                            self.lexical_errors.append(Error("Unclosed comment", self.line, lex[:7] + '...'))
+                            return
                 elif next_char == '/':
                     while True:
                         next_char = self.input_file.read(1)
                         if next_char in self.line_break or next_char == '':
+                            self.line += 1
                             return
-                else:
+                elif next_char in self.symbols or next_char in self.whiteSpace or next_char in self.digit or next_char in self.alphabet:
                     self.input_file.seek(self.input_file.tell() - 1)
                     return Token('SYMBOL', self.line, '/')
+                else:
+                    self.lexical_errors.append(Error("Invalid input", self.line, '/' + next_char))
             elif next_char == '=':
                 next_char = self.input_file.read(1)
                 if next_char == '=':
                     return Token('SYMBOL', self.line, '==')
-                else:
+                elif next_char in self.symbols or next_char in self.whiteSpace or next_char in self.digit or next_char in self.alphabet:
                     self.input_file.seek(self.input_file.tell() - 1)
                     return Token('SYMBOL', self.line, '=')
+                else:
+                    self.lexical_errors.append(Error("Invalid input", self.line, '=' + next_char))
             elif next_char == '*':
                 next_char = self.input_file.read(1)
                 if next_char == '/':
                     self.lexical_errors.append(Error("Unmatched comment", self.line, '*/'))
-                else:
+                elif next_char in self.symbols or next_char in self.whiteSpace or next_char in self.digit or next_char in self.alphabet:
                     self.input_file.seek(self.input_file.tell() - 1)
                     return Token('SYMBOL', self.line, '*')
+                else:
+                    self.lexical_errors.append(Error("Invalid input", self.line, '*' + next_char))
             else:
                 return Token('SYMBOL', self.line, next_char)
         elif next_char in self.whiteSpace:
@@ -101,12 +111,6 @@ class Scanner:
             return 'exit'
         else:
             self.lexical_errors.append(Error("Invalid input", self.line, next_char))
-
-    def save_error(self):
-        pass  # ToDo
-
-    def save_symbol(self):
-        pass  # ToDo
 
 
 class Token:
