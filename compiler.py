@@ -1,3 +1,8 @@
+# Amir Nejadmalayeri 98102487
+# Mohammad javad Alaeddini 98170957
+# Amir hossein bagheri jebelli 98109559
+# Seyed hasan moafi 98171161
+
 import scanner
 
 sc = scanner.Scanner('input.txt')
