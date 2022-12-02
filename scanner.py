@@ -4,8 +4,9 @@ import string
 class Scanner:
 
     def __init__(self, input_file_name: str):
-        self.symbols = [';', '=', '/', '+', '*', '-', '<', '>', ':', '[', ']', '{', '}', '(', ')']
+        self.symbols = [';', '=', '/', '+', '*', '-', '<', ':', '[', ']', '{', '}', '(', ')']
         self.whiteSpace = ['\n', ' ', '\r', '\t', '\v', '\f']
+        self.line_break = ['\n', '\r', '\v', '\f']
         self.keywords = ['if', 'else', 'void', 'int', 'while', 'break', 'switch', 'case', 'default', 'return', 'endif']
         self.digit = list(string.digits)
         self.line = 1
@@ -33,11 +34,11 @@ class Scanner:
                 elif next_char in self.alphabet:
                     lex += next_char
                     self.lexical_errors.append(Error("Invalid number", self.line, lex))
-                    return self.get_next_token()
+                    return None
                 else:
                     lex += next_char
                     self.lexical_errors.append(Error("Invalid input", self.line, lex))
-                    return self.get_next_token()
+                    return None
         elif next_char in self.alphabet:
             lex = next_char
             while True:
@@ -55,9 +56,43 @@ class Scanner:
                 else:
                     lex += next_char
                     self.lexical_errors.append(Error("Invalid input", self.line, lex))
-                    return self.get_next_token()
-        elif next_char == '\n':
-            self.line += 1
+                    return None
+        elif next_char in self.symbols:
+            lex = next_char
+            if next_char == '/':
+                next_char = self.input_file.read(1)
+                lex += next_char
+                if next_char == '*':
+                    while True:
+                        next_char = self.input_file.read(1)
+                        lex += next_char
+                        if next_char == '*':
+                            if self.input_file.read(1) == '/':
+                                return
+                            else:
+                                self.input_file.seek(self.input_file.tell() - 1)
+                        elif next_char == '':
+                            self.lexical_errors.append(Error("Unclosed comment", self.line, lex))
+                elif next_char == '/':
+                    while True:
+                        next_char = self.input_file.read(1)
+                        if next_char in self.line_break or next_char == '':
+                            return
+                else:
+                    self.input_file.seek(self.input_file.tell() - 1)
+                    return Token('SYMBOL', self.line, '/')
+            elif next_char == '=':
+                next_char = self.input_file.read(1)
+                if next_char == '=':
+                    return Token('SYMBOL', self.line, '==')
+                else:
+                    self.input_file.seek(self.input_file.tell() - 1)
+                    return Token('SYMBOL', self.line, '=')
+            else:
+                return Token('SYMBOL', self.line, next_char)
+        elif next_char in self.whiteSpace:
+            if next_char in self.line_break:
+                self.line += 1
 
         pass  # ToDo
 
